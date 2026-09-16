@@ -1,39 +1,44 @@
 """
-Pipeline: connects CUAD's real repo output (Layer 1) to your Layer 2/3/4
+Pipeline: connects CUAD's real repo output (Layer 1) to Layers 2-6
 --------------------------------------------------------------------------
-Expected folder layout (as set up earlier):
+Expected folder layout:
 
-    contract-clause-risk-analyzer/
+    Awishkar/
     |-- cuad/                     <- `git clone https://github.com/The-Atticus-Project/cuad.git cuad`
     |   |-- category_descriptions.csv
-    |   |-- train.py / evaluate.py / utils.py / run.sh
-    |-- risk_taxonomy.py          <- Layer 2
-    |-- risk_scorer.py            <- Layer 3
-    |-- explainability.py         <- Layer 4
-    |-- pipeline.py                (this file)
+    |-- risk_taxonomy.py                 <- Layer 2
+    |-- risk_scorer.py                   <- Layer 3
+    |-- explainability.py                <- Layer 4
+    |-- missing_clause_detection.py      <- Layer 5
+    |-- clause_interaction.py            <- Layer 6
+    |-- pipeline.py                       (this file)
     `-- demo.py
 
-WHAT THIS FILE DOES
---------------------
-1. load_cuad_questions() reads cuad/category_descriptions.csv directly from
-   the cloned CUAD repo, so your questions come from the actual dataset
-   file, not a hand-typed list.
-2. run_cuad_extraction() calls a CUAD-fine-tuned model (HuggingFace) using
-   those questions, exactly the way CUAD's own train.py/run.sh treat each
-   category as a SQuAD-style question. This needs network + a checkpoint,
-   so it is NOT executed in this sandbox -- it's ready to run wherever you
-   have both.
-3. analyze_contract() is the part that runs right now, fully offline: it
-   takes Layer-1-shaped extractions (real or sample) and runs them through
-   Layer 2 (risk_taxonomy) + Layer 3 (risk_scorer) + Layer 4 (explainability).
+WHAT CHANGED FROM THE PREVIOUS VERSION OF THIS FILE
+------------------------------------------------------
+The version of pipeline.py previously in this repo only imported
+risk_scorer and explainability, and only ran Layers 2-4 via
+analyze_contract(). Layers 5 and 6 existed as files
+(missing_clause_detection.py, clause_interaction.py) but were never
+imported or called from anywhere -- so they were disconnected from the
+actual pipeline despite being present in the repo.
+
+This version adds the missing imports and a new full_analysis() function
+that runs the complete Layer 1 -> Layer 6 chain and returns one combined
+report: per-clause results (Layers 2-4), missing-clause findings
+(Layer 5), and one contract-level risk score with interaction findings
+(Layer 6). analyze_contract() is kept for backwards compatibility but
+full_analysis() is now the function your demo/UI should call.
 """
 
 import csv
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from risk_scorer import score_contract
 from explainability import build_report
+from missing_clause_detection import detect_missing_clauses
+from clause_interaction import aggregate_contract_risk
 
 CUAD_REPO_DIR = os.path.join(os.path.dirname(__file__), "cuad")
 CATEGORY_CSV_PATH = os.path.join(CUAD_REPO_DIR, "category_descriptions.csv")
@@ -42,14 +47,9 @@ CATEGORY_CSV_PATH = os.path.join(CUAD_REPO_DIR, "category_descriptions.csv")
 def load_cuad_questions(csv_path: str = CATEGORY_CSV_PATH) -> Dict[str, str]:
     """
     Reads CUAD's real category_descriptions.csv (from the cloned repo) and
-    returns {category_name: question_text}.
-
-    CUAD's CSV column names aren't 100% fixed across versions, so this
-    looks for the most likely column names and falls back gracefully.
-    If the repo hasn't been cloned yet (file not found), it falls back to
-    the verified subset of questions bundled in risk_taxonomy.py instead
-    of crashing -- so this module still works for the demo even before
-    you `git clone` the CUAD repo.
+    returns {category_name: question_text}. Falls back to the verified
+    question subset in risk_taxonomy.py if the CUAD repo isn't cloned yet,
+    so this still works without network access.
     """
     if not os.path.exists(csv_path):
         print(f"[warning] {csv_path} not found -- clone the CUAD repo into "
@@ -61,8 +61,6 @@ def load_cuad_questions(csv_path: str = CATEGORY_CSV_PATH) -> Dict[str, str]:
     questions = {}
     with open(csv_path, newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        # CUAD's actual header uses "Category" and "Question" (naming has
-        # varied slightly across releases) -- check common variants.
         fieldnames = reader.fieldnames or []
         cat_col = next((c for c in fieldnames if c.strip().lower() == "category"), None)
         q_col = next((c for c in fieldnames if "question" in c.strip().lower()), None)
@@ -87,11 +85,10 @@ def run_cuad_extraction(contract_text: str, threshold: float = 0.5,
                          model_id: str = "<path-or-hub-id-of-cuad-finetuned-model>"
                          ) -> List[Dict]:
     """
-    Real Layer-1 inference using a CUAD-fine-tuned model.
-    Requires network + a HuggingFace checkpoint fine-tuned on CUAD
-    (e.g. one following the repo's train.py/run.sh recipe on RoBERTa or
-    DeBERTa). NOT runnable offline in this sandbox -- drop in your
-    checkpoint path/hub id and run this wherever you have GPU/network.
+    Real Layer-1 inference using a CUAD-fine-tuned model (HuggingFace).
+    Requires network + a checkpoint -- not runnable offline in this
+    sandbox. Drop in your model path/hub id and run wherever you have
+    GPU/network access.
     """
     from transformers import pipeline  # local import: optional dependency
     qa = pipeline("question-answering", model=model_id)
@@ -111,9 +108,28 @@ def run_cuad_extraction(contract_text: str, threshold: float = 0.5,
 
 def analyze_contract(extractions: List[Dict]) -> List[Dict]:
     """
-    Runs TODAY, fully offline: takes Layer-1-style extractions (whether
-    from the real CUAD model or sample/mock data) and runs Layers 2, 3,
-    and 4 on them.
+    Layers 2-4 only (kept for backwards compatibility / simpler use).
+    Runs today, fully offline, on real or sample Layer-1-shaped extractions.
     """
     scored = score_contract(extractions)
     return build_report(scored)
+
+
+def full_analysis(extractions: List[Dict], raw_contract_text: Optional[str] = None) -> Dict:
+    """
+    The complete Layer 1 -> Layer 6 pipeline. This is what your demo/UI
+    should call. `raw_contract_text` is optional but needed for the
+    heuristic missing-clause checks in Layer 5 (Confidentiality, Dispute
+    Resolution, Force Majeure, Data Privacy -- none of which are CUAD
+    categories, so they can't be found in `extractions` at all).
+    """
+    scored_clauses = score_contract(extractions)
+    clause_report = build_report(scored_clauses)                             # Layers 2-4
+    missing_clauses = detect_missing_clauses(extractions, raw_contract_text)  # Layer 5
+    contract_risk = aggregate_contract_risk(scored_clauses)                  # Layer 6
+
+    return {
+        "clauses": clause_report,
+        "missing_clauses": missing_clauses,
+        "contract_risk": contract_risk,
+    }
