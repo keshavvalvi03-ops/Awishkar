@@ -2,20 +2,23 @@
 Layer 3: Risk Scoring Engine
 -----------------------------
 Takes the output of CUAD's clause-extraction model (Layer 1: category +
-extracted text span + model confidence) and produces a numeric risk score
-and a Low/Medium/High level.
+extracted text span + model confidence) or custom detector and produces
+a numeric risk score and a Low/Medium/High level.
 
-This is a transparent, rule-based scorer: score = base_severity (from the
-taxonomy) + sum of keyword modifiers found in the clause text, scaled by
-the model's extraction confidence. Being rule-based (rather than a black
-box) is itself a deliberate explainability design choice, and every
-component of the score is inspectable (see explainability.py).
+Transparent, rule-based scorer:
+  score = base_severity + sum of keyword modifiers, weighted by confidence.
 """
 
+import re
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Dict, Optional, Any, Union
 
-from risk_taxonomy import RISK_TAXONOMY, KEYWORD_MODIFIERS, get_risk_level
+from risk_taxonomy import KEYWORD_MODIFIERS, get_risk_level
+from custom_taxonomy import (
+    EXTENDED_TAXONOMY,
+    normalize_category_name,
+    get_category_info,
+)
 
 
 @dataclass
@@ -24,70 +27,109 @@ class ScoredClause:
     clause_text: str
     confidence: float
     risk_type: str
-    base_severity: float
+    base_severity: Union[int, float]
     matched_keywords: List[str] = field(default_factory=list)
-    keyword_bonus: float = 0.0
-    raw_score: float = 0.0
-    final_score: float = 0.0
+    keyword_bonus: Union[int, float] = 0
+    raw_score: Union[int, float] = 0
+    final_score: Union[int, float] = 0.0
     risk_level: str = "Low"
+    provisional: bool = False
+    original_category: str = ""
 
 
-def score_clause(category: str, clause_text: str, confidence: float = 1.0) -> ScoredClause:
+# Compile word-bounded regex patterns for keyword modifiers to avoid false positives
+_COMPILED_MODIFIERS = {
+    kw: re.compile(r"\b" + re.escape(kw) + r"\b", re.IGNORECASE)
+    for kw in KEYWORD_MODIFIERS.keys()
+}
+
+
+def score_clause(category: str,
+                 clause_text: Optional[str] = "",
+                 confidence: Optional[float] = 1.0) -> ScoredClause:
     """
-    Score a single extracted clause.
+    Scores a single extracted clause with safe input handling.
 
-    category:    one of the CUAD category names (e.g. "Uncapped Liability")
-    clause_text: the extracted span/answer text from the CUAD model
-    confidence:  the CUAD model's extraction confidence (0-1); low-confidence
-                 extractions are down-weighted so weak detections don't get
-                 flagged as confidently "High risk"
+    Bugs fixed:
+    - Handles confidence=None gracefully (defaults to 1.0).
+    - Handles clause_text=None or non-string inputs safely.
+    - Uses category alias normalization and case insensitivity.
+    - Uses regex word-boundary matching to prevent false-positive substring matches.
+    - Handles unrecognized/informational categories without crashing.
     """
-    taxonomy_entry = RISK_TAXONOMY.get(category)
-    if taxonomy_entry is None:
-        # Category isn't in our risk-relevant taxonomy (e.g. "Parties",
-        # "Agreement Date") -> not a risk clause, skip scoring.
+    safe_text = str(clause_text or "").strip()
+    safe_conf = 1.0 if confidence is None else float(confidence)
+    safe_conf = max(0.0, min(1.0, safe_conf))  # clamp to [0, 1]
+
+    canonical = normalize_category_name(category)
+    cat_info = get_category_info(canonical)
+
+    if cat_info is None:
+        # Category is not a risk-bearing clause (e.g. "Parties", "Agreement Date")
+        # or completely unrecognized
         return ScoredClause(
-            category=category, clause_text=clause_text, confidence=confidence,
-            risk_type="N/A", base_severity=0, raw_score=0, final_score=0,
+            category=canonical if canonical != "Unknown" else str(category),
+            clause_text=safe_text,
+            confidence=safe_conf,
+            risk_type="N/A",
+            base_severity=0,
+            raw_score=0,
+            final_score=0,
             risk_level="Not Applicable",
+            provisional=False,
+            original_category=str(category),
         )
 
-    base = taxonomy_entry["base_severity"]
-    risk_type = taxonomy_entry["risk_type"]
+    base = cat_info["base_severity"]
+    risk_type = str(cat_info["risk_type"])
+    is_prov = cat_info.get("provisional", False)
 
-    text_lower = clause_text.lower()
-    matched = [kw for kw in KEYWORD_MODIFIERS if kw in text_lower]
-    bonus = sum(KEYWORD_MODIFIERS[kw] for kw in matched)
+    # Word-bounded keyword matching to prevent false positives
+    matched = []
+    bonus = 0
+    for kw, pattern in _COMPILED_MODIFIERS.items():
+        if pattern.search(safe_text):
+            matched.append(kw)
+            bonus += KEYWORD_MODIFIERS[kw]
 
     raw_score = base + bonus
-    # confidence weighting: a shaky extraction shouldn't produce a confident
-    # high-risk flag. Confidence < 1.0 pulls the score toward a neutral 5.
-    final_score = confidence * raw_score + (1 - confidence) * 5
+
+    # Confidence weighting: pull toward neutral 5.0 for low-confidence detections
+    final_score = safe_conf * raw_score + (1.0 - safe_conf) * 5
     final_score = max(0, min(10, final_score))  # clamp to [0, 10]
+    final_score = round(final_score, 2)
 
     return ScoredClause(
-        category=category,
-        clause_text=clause_text,
-        confidence=confidence,
+        category=canonical,
+        clause_text=safe_text,
+        confidence=safe_conf,
         risk_type=risk_type,
         base_severity=base,
         matched_keywords=matched,
         keyword_bonus=bonus,
         raw_score=raw_score,
-        final_score=round(final_score, 2),
+        final_score=final_score,
         risk_level=get_risk_level(final_score),
+        provisional=is_prov,
+        original_category=str(category),
     )
 
 
-def score_contract(extractions: List[dict]) -> List[ScoredClause]:
+def score_contract(extractions: Optional[List[Dict[str, Any]]]) -> List[ScoredClause]:
     """
-    extractions: list of dicts shaped like CUAD model output, e.g.
-        {"category": "Uncapped Liability",
-         "text": "...clause span...",
-         "confidence": 0.87}
-    Returns a list of ScoredClause, one per input extraction.
+    Scores all extractions in a contract.
+    Safely handles empty extractions, missing keys, or None values.
     """
-    return [
-        score_clause(e["category"], e["text"], e.get("confidence", 1.0))
-        for e in extractions
-    ]
+    if not extractions:
+        return []
+
+    scored_list = []
+    for e in extractions:
+        if not isinstance(e, dict):
+            continue
+        cat = e.get("category", "")
+        txt = e.get("text", "")
+        conf = e.get("confidence", 1.0)
+        scored_list.append(score_clause(cat, txt, conf))
+
+    return scored_list

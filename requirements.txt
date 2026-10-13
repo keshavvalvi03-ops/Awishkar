@@ -1,0 +1,20 @@
+# Explainable AI-Based Clause Risk Analyser
+# Core Analysis Pipeline Dependencies
+# -----------------------------------
+# The core 6-layer analysis pipeline, multi-contract type analyzer,
+# experimental keyword detector, and test suite run entirely on the
+# Python 3.8+ Standard Library without requiring third-party packages.
+
+# =====================================================================
+# OPTIONAL: Live HuggingFace Model Inference (Layer 1 CUAD Model)
+# =====================================================================
+# Required ONLY if you wish to run live transformer QA model extraction
+# via pipeline.run_cuad_extraction() with GPU or local checkpoints.
+#
+# To install optional ML dependencies:
+#   pip install -r requirements.txt
+#
+# Note: Basic offline analysis and rule-based custom detector run without these.
+
+transformers>=4.30.0
+torch>=2.0.0
