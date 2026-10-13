@@ -1,6 +1,8 @@
 # Explainable AI-Based Contract Clause Risk Analyzer
 
-An explainable NLP and rule-based pipeline for contract clause risk analysis and missing clause detection. Built on top of CUAD (TheAtticusProject/cuad) clause extraction (Layer 1), this project implements five additional layers (Layers 2–6) providing transparent risk scoring, feature attribution, contract-specific checklist verification, and cross-clause compounding interaction analysis across **10 commercial contract types**.
+**ClauseGuard AI — Explainable Contract Risk Analysis**
+
+An explainable NLP and rule-based pipeline with an interactive web application for contract clause risk analysis and missing clause detection. Built on top of CUAD (TheAtticusProject/cuad) clause extraction (Layer 1), this project implements five additional layers (Layers 2–6) providing transparent risk scoring, exact feature attribution, contract-specific checklist verification, compounding cross-clause risk analysis, and an executive legal audit dashboard across **10 commercial contract types**.
 
 ---
 
@@ -10,7 +12,7 @@ The pipeline uses a modular six-layer architecture:
 
 ```
 +-----------------------------------------------------------------------------------+
-| Layer 1: Clause Extraction (CUAD Model / Experimental Keyword Detector)           |
+| Layer 1: Clause Extraction (CUAD QA Model / Experimental Keyword Detector)        |
 +-----------------------------------------------------------------------------------+
                                          |
 +-----------------------------------------------------------------------------------+
@@ -103,25 +105,77 @@ The system clearly differentiates detection methodologies:
 
 ---
 
-## 5. Live CUAD Extraction Status
+## 5. Web Application Features (ClauseGuard AI)
 
-- **Status in Repository**: The live model loader in `pipeline.py` (`run_cuad_extraction()`) is an interface designed to connect to HuggingFace question-answering checkpoints (e.g. `mrm8488/roberta-base-finetuned-cuad`).
-- **Dependencies**: Running live transformer inference requires optional dependencies (`torch`, `transformers`) which are documented in `requirements.txt`.
-- **Offline Readiness**: The core 6-layer pipeline, `demo.py`, `demo_multi_contract.py`, `custom_detector.py`, and all 37 automated tests run **100% offline** on standard Python 3.8+ without downloading neural weights or requiring network/GPU access.
+The web dashboard is built for local execution and presentation at college research competitions (Avishkar):
+
+- **Overview / Home**: Research summary, 6-layer architecture cards, quick-start action buttons.
+- **Analyse Contract**: Raw text pasteboard, genuine file drag-and-drop for `.txt`, `.pdf`, `.docx`, contract-type auto-suggestion with confidence and uncertainty badges, quick benchmark sample loaders.
+- **Risk Dashboard**: Contract risk score gauge [0–10], Low/Medium/High badge, summary counters, interactive Chart.js donut and bar charts, searchable and filterable clause matrix.
+- **Explainable AI (XAI)**: Clause-by-clause explainability cards showing exact evidence snippets, risk-modifying phrases (`'unlimited'`, `'sole discretion'`), and full mathematical attribution breakdowns.
+- **Missing Clauses Checklist**: Contract-specific checklist filterable by `Expected`, `Conditional`, `Optional`, and `Not detected — verify manually`.
+- **Cross-Clause Interactions**: Triggered compounding interaction trap cards (bonus score, reasons, mitigating conditions) and non-triggered rules.
+- **Executive Report**: Printable legal memo layout with one-click print-to-PDF export.
+- **Architecture & Methodology**: Detailed academic breakdown of all 6 layers and research citations.
+- **Clause Inspector Modal**: Click any clause row to inspect its exact evidence and mathematical attribution breakdown.
 
 ---
 
-## 6. Bugs Fixed in this Version
+## 6. Installation & Execution (Windows CMD)
 
-1. **Empty Input Schema Completeness**: Fixed `aggregate_contract_risk([])` and `full_analysis([], None)` so that `base_weighted_score`, `interaction_bonus`, and all other fields are always present, eliminating `KeyError` crashes.
-2. **`confidence=None` Handling**: Fixed `score_clause()` to handle `confidence=None` without raising `TypeError: unsupported operand type(s) for *: 'NoneType' and 'int'`.
-3. **Zero-Confidence Division by Zero**: Fixed `aggregate_contract_risk()` when all clause confidences are `0.0`, eliminating `ZeroDivisionError`.
-4. **Missing / None Extraction Text**: Handled `None` or non-string clause text safely, eliminating `AttributeError` on `.lower()`.
-5. **Category Normalization**: Added robust case-insensitive and synonym normalization (e.g. `"INDEMNIFICATION"` -> `"Indemnity"`, `"limitation of liability"` -> `"Cap On Liability"`, `"licence grant"` -> `"License Grant"`).
-6. **False-Positive Keyword Matching**: Replaced naive substring search with regex word-boundary matching (`\b`), preventing substring collisions (e.g. `"exceptional"` matching `"except"`).
-7. **CUAD Questions CSV Parsing & Governing Law Fallback**: Fixed UTF-8 BOM encoding issues and column header mismatch (`Category (incl. context and answer)` / `Description`), ensuring all 41 CUAD questions (including `Governing Law`) load properly.
-8. **Exclusive Lock-In Logic**: Updated `Exclusive Lock-In Trap` to verify actual automatic/evergreen renewal language rather than penalizing contracts with standard mutual-consent renewal clauses.
-9. **Contract-Type Checklists**: Replaced hardcoded one-size-fits-all missing clause checks with contract-specific checklists while maintaining 100% backward compatibility for existing callers.
+### Prerequisites
+- Python 3.8+ installed (tested on Python 3.12).
+- Pip package manager.
+
+### 1. Install Dependencies
+Open Windows Command Prompt (`cmd.exe`) and navigate to the project directory:
+
+```cmd
+cd C:\Users\ADMIN\Documents\Awishkar
+
+pip install -r requirements.txt
+```
+
+### 2. Launch the Web Application
+Run the FastAPI web server:
+
+```cmd
+python app.py
+```
+*Or using uvicorn directly:*
+```cmd
+uvicorn app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+Open your web browser and navigate to:
+**http://127.0.0.1:8000**
+
+---
+
+### 3. Run Command-Line Demos & Automated Tests
+
+**Run Baseline Demo (Original PoC):**
+```cmd
+python demo.py
+```
+*(Produces exact verified score: `8.16 / 10 High`)*
+
+**Run Multi-Contract CLI Demo (All 10 Contract Types):**
+```cmd
+python demo_multi_contract.py
+```
+
+**Run Multi-Contract CLI Demo for a Specific Type:**
+```cmd
+python demo_multi_contract.py --type nda
+python demo_multi_contract.py --type service
+python demo_multi_contract.py --type lease
+```
+
+**Run All 47 Automated Unit and Integration Tests:**
+```cmd
+python -m unittest discover -s tests -v
+```
 
 ---
 
@@ -138,56 +192,11 @@ Triggered interactions:
   - Abrupt Walkaway Risk (+1.0): Either party can terminate without cause, but no post-termination obligations (wind-down, transition, hand-back) are defined...
 ```
 
-This score is mathematically derived from the transparent scoring formula and is verified by automated regression tests.
+This score is mathematically derived from the transparent scoring formula and is verified by automated regression tests in `tests/test_pipeline_and_regression.py` and `tests/test_api.py`.
 
 ---
 
-## 8. Installation & Windows CMD Commands
-
-### Prerequisites
-- Python 3.8, 3.10, 3.11, or 3.12 installed.
-- No third-party packages are required for standard offline analysis.
-
-### Running Demos in Windows CMD
-
-Open Windows Command Prompt (`cmd.exe`) and navigate to the project directory:
-
-```cmd
-cd C:\Users\ADMIN\Documents\Awishkar
-```
-
-**1. Run Original Baseline Demo:**
-```cmd
-python demo.py
-```
-
-**2. Run Multi-Contract Demo (All 10 Contract Types):**
-```cmd
-python demo_multi_contract.py
-```
-
-**3. Run Multi-Contract Demo for a Specific Contract Type:**
-```cmd
-python demo_multi_contract.py --type nda
-python demo_multi_contract.py --type service
-python demo_multi_contract.py --type lease
-python demo_multi_contract.py --type software
-```
-
-**4. Run Automated Test Suite (37 Unit & Regression Tests):**
-```cmd
-python -m unittest discover -s tests -v
-```
-
-### Optional: Installing Neural ML Dependencies (For Live QA Transformer Inference)
-If you wish to test live HuggingFace QA extraction with PyTorch:
-```cmd
-pip install -r requirements.txt
-```
-
----
-
-## 9. Git Instructions (Pushing Verified Changes)
+## 8. Git Instructions (Pushing Verified Changes)
 
 To review and push your verified local changes to your GitHub repository:
 
@@ -196,22 +205,22 @@ cd C:\Users\ADMIN\Documents\Awishkar
 
 git status
 git add .
-git commit -m "Extend Contract Risk Analyser: 10 contract types, extended taxonomy, custom detector, bug fixes, and unit tests"
+git commit -m "Build ClauseGuard AI: Interactive FastAPI web application, document upload, and 47 automated tests"
 git push origin main
 ```
 
 ---
 
-## 10. Scope and Known Limitations
+## 9. Scope and Known Limitations
 
-- **Scope**: This repository contains the core explainable NLP and rule-based risk analysis engine, contract type checklists, and automated test suite.
-- **Web Interface & Database**: The web dashboard, user authentication, and database schemas referenced in high-level architectural proposals are future deployment milestones and are not yet implemented in this repository.
-- **Document Ingestion**: File parsing for PDF/DOCX uploads is not yet implemented; the pipeline currently ingests plain text strings and structured extraction dictionaries.
+- **Scope**: Core explainable NLP pipeline, multi-contract type checklists, keyword pattern matching, FastAPI backend, and single-page interactive dashboard.
+- **Genuine Document Ingestion**: Text extraction is fully implemented and tested for `.txt`, `.pdf` (via `pypdf`), and `.docx` (via `python-docx`). Scanned PDFs containing only images without text OCR are transparently flagged.
+- **Database & Authentication**: User login and persistent database storage are future roadmap items; all processing currently runs locally in memory without tracking user data.
 - **Legal Advice**: This software is an explainable decision-support tool for contract triage and review acceleration. It does not provide legal advice or guarantee universal jurisdictional compliance.
 
 ---
 
-## 11. References
+## 10. References
 
 1. Hendrycks et al. (2021). *CUAD: An Expert-Annotated NLP Dataset for Legal Contract Review.* NeurIPS Datasets & Benchmarks.
 2. Dikmen et al. (2025). *Automated construction contract analysis for risk and responsibility assessment using NLP and ML.* Computers in Industry 166.

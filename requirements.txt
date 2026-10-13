@@ -1,20 +1,25 @@
-# Explainable AI-Based Clause Risk Analyser
-# Core Analysis Pipeline Dependencies
-# -----------------------------------
-# The core 6-layer analysis pipeline, multi-contract type analyzer,
-# experimental keyword detector, and test suite run entirely on the
-# Python 3.8+ Standard Library without requiring third-party packages.
+# ClauseGuard AI: Explainable Contract Clause Risk Analyser
+# Web Application & Analysis Pipeline Dependencies
+# ---------------------------------------------------------------------
+
+# 1. Web Application & API Server (FastAPI + Uvicorn)
+fastapi>=0.110.0
+uvicorn>=0.28.0
+python-multipart>=0.0.9
+httpx>=0.27.0
+
+# 2. Genuine Document Text Extractors (PDF, DOCX)
+pypdf>=4.0.0
+python-docx>=1.1.0
 
 # =====================================================================
-# OPTIONAL: Live HuggingFace Model Inference (Layer 1 CUAD Model)
+# OPTIONAL: Live HuggingFace Model Inference (Layer 1 CUAD Transformer)
 # =====================================================================
-# Required ONLY if you wish to run live transformer QA model extraction
+# Required ONLY if you wish to run live neural QA model extraction
 # via pipeline.run_cuad_extraction() with GPU or local checkpoints.
 #
-# To install optional ML dependencies:
-#   pip install -r requirements.txt
+# Note: Offline analysis, rule-based custom detector, and full web dashboard
+# run without these neural packages.
 #
-# Note: Basic offline analysis and rule-based custom detector run without these.
-
-transformers>=4.30.0
-torch>=2.0.0
+# transformers>=4.30.0
+# torch>=2.0.0

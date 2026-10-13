@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClauseGuard AI — Explainable Contract Risk Analysis</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <!-- Standalone Chart.js for interactive visualizations -->
+  <script src="/static/js/vendor/chart.umd.min.js"></script>
+</head>
+<body>
+  <div id="app-container">
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">CG</div>
+        <div class="brand-text">
+          <h1>ClauseGuard <span class="brand-badge">AI</span></h1>
+          <div class="brand-subtitle">Explainable Contract Risk Analyser</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Navigation</div>
+        <a class="nav-link active" data-view="home">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          Overview & Home
+        </a>
+        <a class="nav-link" data-view="analyze">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Analyse Contract
+        </a>
+
+        <div class="nav-section-title">Analysis Results</div>
+        <a class="nav-link" data-view="dashboard">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+          Risk Dashboard
+        </a>
+        <a class="nav-link" data-view="xai">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          Explainable AI (XAI)
+        </a>
+        <a class="nav-link" data-view="missing">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          Missing Clauses
+        </a>
+        <a class="nav-link" data-view="interactions">
+          <svg viewBox="0 0 24 24" fill="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          Cross-Clause Risks
+        </a>
+        <a class="nav-link" data-view="report">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+          Executive Report
+        </a>
+
+        <div class="nav-section-title">Research & System</div>
+        <a class="nav-link" data-view="methodology">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          Architecture & Layers
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="footer-research-tag">Avishkar Research Project</span>
+        Explainable AI Clause Risk Analyser
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div id="main-content">
+      <!-- Top Sticky Header -->
+      <header id="top-header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" id="mobile-toggle" aria-label="Toggle Navigation">
+            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+          <div class="page-title-box">
+            <h2 id="header-page-title">Overview & Home</h2>
+            <p id="header-page-subtitle">Explainable AI-Based Clause Risk Analyser in Contract</p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div id="active-mode-badge" class="mode-badge sample">
+            <span class="pulse-dot"></span>
+            <span id="mode-text">Ready for Analysis</span>
+          </div>
+          <button class="btn btn-primary btn-sm" id="btn-quick-analyze">
+            ⚡ Analyse New
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Views Container -->
+      <main class="view-container">
+
+        <!-- =================================================================
+             VIEW 1: HOME / OVERVIEW
+             ================================================================= -->
+        <section id="view-home" class="view-section active">
+          <div class="hero-section">
+            <div class="hero-badge-row">
+              <span class="hero-badge">Avishkar Research Prototype</span>
+              <span class="hero-badge">Six-Layer Architecture</span>
+              <span class="hero-badge">10 Supported Contract Types</span>
+            </div>
+            <h1 class="hero-title">
+              Explainable AI-Based Clause <span>Risk Analyser</span>
+            </h1>
+            <p class="hero-subtitle">
+              ClauseGuard AI brings transparent, inspectable machine intelligence to commercial contract review. 
+              Analyze liability caps, restrictive covenants, missing protections, and compounding cross-clause risk traps 
+              with exact feature attribution and zero black-box obscurity.
+            </p>
+            <div class="hero-actions">
+              <button class="btn btn-primary btn-lg" id="hero-btn-start">
+                📝 Analyse a Contract
+              </button>
+              <button class="btn btn-secondary btn-lg" id="hero-btn-sample">
+                📂 Try Baseline Sample
+              </button>
+              <button class="btn btn-outline-teal btn-lg" id="hero-btn-methodology">
+                ℹ️ Explore 6-Layer Architecture
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Stats Row -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon navy">🏛️</div>
+              <div>
+                <div class="stat-value">10 Types</div>
+                <div class="stat-label">Commercial Contract Types</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon teal">📑</div>
+              <div>
+                <div class="stat-value">80+ Categories</div>
+                <div class="stat-label">CUAD & Extended Taxonomy</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon amber">🔍</div>
+              <div>
+                <div class="stat-value">100% Explainable</div>
+                <div class="stat-label">Exact Feature Attribution</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon purple">⚡</div>
+              <div>
+                <div class="stat-value">6 Layers</div>
+                <div class="stat-label">Modular Analysis Pipeline</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature Showcase Cards -->
+          <div class="card" style="margin-bottom: 30px;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Core Research Capabilities</h3>
+                <p class="card-subtitle">Addressing critical research gaps left open by existing legal NLP literature</p>
+              </div>
+            </div>
+            <div class="architecture-timeline">
+              <div class="layer-box">
+                <div class="layer-number">1</div>
+                <div class="layer-title">Clause Extraction & Classification</div>
+                <div class="layer-desc">Extracts commercial clauses with CUAD QA models and transparent word-boundary regex detection.</div>
+              </div>
+              <div class="layer-box">
+                <div class="layer-number">2</div>
+                <div class="layer-title">Transparent Risk Scoring</div>
+                <div class="layer-desc">Combines base severity with calibrated keyword modifiers (e.g. 'unlimited', 'sole discretion') scaled by extraction confidence.</div>
+              </div>
+              <div class="layer-box">
+                <div class="layer-number">3</div>
+                <div class="layer-title">Exact Feature Attribution</div>
+                <div class="layer-desc">Unlike black-box SHAP/LIME approximations, every fraction of a risk score is traced to exact mathematical factors.</div>
+              </div>
+              <div class="layer-box">
+                <div class="layer-number">4</div>
+                <div class="layer-title">Contract-Specific Missing Clauses</div>
+                <div class="layer-desc">Flags absent protections based on dedicated checklists for each of the 10 supported contract types.</div>
+              </div>
+              <div class="layer-box">
+                <div class="layer-number">5</div>
+                <div class="layer-title">Cross-Clause Interaction Traps</div>
+                <div class="layer-desc">Surfaces compounding danger combinations (e.g., Uncapped Liability without Liability Cap, Auto-Renew Exclusive Lock-Ins).</div>
+              </div>
+              <div class="layer-box">
+                <div class="layer-number">6</div>
+                <div class="layer-title">Calibrated Contract-Level Risk</div>
+                <div class="layer-desc">Aggregates document risk weighted by extraction confidence so shaky detections don't inflate document risk.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Academic Disclaimer -->
+          <div class="disclaimer-banner">
+            <div style="font-size: 1.5rem;">⚖️</div>
+            <div class="disclaimer-text">
+              <h4>Academic Research Disclaimer</h4>
+              <p>ClauseGuard AI is an automated decision-support prototype built for research demonstration. It does not provide formal legal advice, guarantee universal statutory compliance, or replace professional legal review by qualified counsel.</p>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- =================================================================
+             VIEW 2: CONTRACT ANALYSIS FORM
+             ================================================================= -->
+        <section id="view-analyze" class="view-section">
+          <div class="analysis-grid">
+            <!-- Left: Text Input & File Upload -->
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Submit Contract Text</h3>
+                  <p class="card-subtitle">Paste contract terms or upload a digital document (.txt, .docx, .pdf)</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="btn-clear-input">🧹 Clear Text</button>
+              </div>
+
+              <!-- Genuine Document Upload Zone -->
+              <div class="form-group">
+                <label class="form-label">Upload Document (Optional)</label>
+                <div class="dropzone" id="file-dropzone">
+                  <input type="file" id="file-input" accept=".txt,.docx,.pdf">
+                  <div class="dropzone-icon">📄</div>
+                  <div class="dropzone-text">Drag & drop contract file here, or click to browse</div>
+                  <div class="dropzone-subtext">Genuine text extraction supported for .txt, .docx, and .pdf documents</div>
+                </div>
+                <div id="file-status-container" style="display: none;"></div>
+              </div>
+
+              <!-- Text Area -->
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+                  <label class="form-label" style="margin: 0;">Contract Text</label>
+                  <span id="char-counter" style="font-size: 0.74rem; color: var(--slate-400);">0 characters | 0 words</span>
+                </div>
+                <textarea id="contract-text-input" class="form-control" placeholder="Paste full agreement text here (e.g. Master Services Agreement, NDA, Software License, Employment Contract)..."></textarea>
+              </div>
+
+              <!-- Action Buttons -->
+              <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <button class="btn btn-primary btn-lg" id="btn-run-analysis">
+                  ⚡ Analyse Contract Risk
+                </button>
+                <button class="btn btn-secondary btn-lg" id="btn-open-samples-modal">
+                  📂 Load Pre-Configured Sample
+                </button>
+              </div>
+            </div>
+
+            <!-- Right: Configuration & Type Suggestion -->
+            <div>
+              <div class="card" style="margin-bottom: 20px;">
+                <div class="card-header">
+                  <h3 class="card-title">Contract Parameters</h3>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Contract Type</label>
+                  <select id="contract-type-select" class="form-control">
+                    <option value="">-- Auto-Detect from Text --</option>
+                    <option value="Service Agreement">Service Agreement</option>
+                    <option value="Employment Agreement">Employment Agreement</option>
+                    <option value="NDA / Confidentiality Agreement">NDA / Confidentiality Agreement</option>
+                    <option value="Software / IT Agreement">Software / IT Agreement</option>
+                    <option value="Vendor / Supply Agreement">Vendor / Supply Agreement</option>
+                    <option value="Lease / Rental Agreement">Lease / Rental Agreement</option>
+                    <option value="Licensing Agreement">Licensing Agreement</option>
+                    <option value="Partnership Agreement">Partnership Agreement</option>
+                    <option value="Merger / Acquisition Agreement">Merger / Acquisition Agreement</option>
+                    <option value="General Business Agreement">General Business Agreement</option>
+                  </select>
+                  <div style="font-size: 0.74rem; color: var(--slate-500); margin-top: 4px;">
+                    Select explicitly or allow ClauseGuard to auto-suggest from preamble.
+                  </div>
+                </div>
+
+                <!-- Live Type Suggestion Display -->
+                <div id="live-suggestion-box" style="display: none;" class="type-suggestion-card">
+                  <div class="suggestion-header">
+                    <span>💡 AI Suggestion: <span id="suggested-type-name">None</span></span>
+                    <span id="suggested-conf-badge" class="badge badge-teal">0%</span>
+                  </div>
+                  <div id="suggested-evidence-text" class="suggestion-evidence"></div>
+                  <button class="btn btn-outline-teal btn-sm" id="btn-accept-suggestion" style="margin-top: 8px; width: 100%;">
+                    ✓ Apply Suggested Type
+                  </button>
+                </div>
+              </div>
+
+              <!-- Quick Demo Loader Card -->
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Quick Demo Loaders</h3>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--slate-600); margin-bottom: 12px;">
+                  Quickly test the system using validated benchmarks:
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <button class="btn btn-secondary btn-sm" id="btn-load-poc-demo" style="text-align: left; justify-content: flex-start;">
+                    ⭐ Baseline Demo PoC (Score 8.16 High)
+                  </button>
+                  <button class="btn btn-secondary btn-sm" id="btn-load-service-sample" style="text-align: left; justify-content: flex-start;">
+                    💼 Master Services Agreement
+                  </button>
+                  <button class="btn btn-secondary btn-sm" id="btn-load-nda-sample" style="text-align: left; justify-content: flex-start;">
+                    🔒 Mutual NDA Agreement
+                  </button>
+                  <button class="btn btn-secondary btn-sm" id="btn-load-saas-sample" style="text-align: left; justify-content: flex-start;">
+                    ☁️ SaaS / Cloud IT Agreement
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- =================================================================
+             VIEW 3: ANALYSIS DASHBOARD
+             ================================================================= -->
+        <section id="view-dashboard" class="view-section">
+          <!-- Main KPI Score Header Card -->
+          <div class="dashboard-score-card">
+            <div>
+              <div style="font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--teal-light); font-weight: 700; margin-bottom: 6px;">
+                Contract Risk Assessment
+              </div>
+              <div class="score-display">
+                <div class="score-big" id="dash-score-val">0.0</div>
+                <div class="score-max">/ 10</div>
+                <span class="score-level-badge badge-med" id="dash-level-badge">Pending</span>
+              </div>
+              <div id="dash-risk-narrative" style="font-size: 0.86rem; color: var(--slate-300); margin-top: 8px; max-width: 600px;">
+                Submit a contract or load sample data to generate calibrated risk assessment.
+              </div>
+
+              <div class="score-meta-grid">
+                <div class="score-meta-item">
+                  <div class="label">Base Weighted Score</div>
+                  <div class="val" id="dash-base-score">0.0</div>
+                </div>
+                <div class="score-meta-item">
+                  <div class="label">Interaction Bonus</div>
+                  <div class="val" id="dash-bonus-score">+0.0</div>
+                </div>
+                <div class="score-meta-item">
+                  <div class="label">Avg Extraction Conf.</div>
+                  <div class="val" id="dash-conf-val">0%</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Mini Stat Stack -->
+            <div style="text-align: right; min-width: 200px;">
+              <div style="font-size: 0.78rem; color: var(--slate-400);">Contract Type Assessed</div>
+              <div id="dash-contract-type" style="font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 12px;">--</div>
+              <button class="btn btn-outline-teal btn-sm" id="dash-btn-view-report">
+                📄 View Executive Report
+              </button>
+            </div>
+          </div>
+
+          <!-- Secondary Metric Tiles -->
+          <div class="stats-grid" style="margin-bottom: 24px;">
+            <div class="stat-card">
+              <div class="stat-icon teal">📑</div>
+              <div>
+                <div class="stat-value" id="dash-total-extracted">0</div>
+                <div class="stat-label">Extracted Clauses</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon amber">⚠️</div>
+              <div>
+                <div class="stat-value" id="dash-risky-count">0</div>
+                <div class="stat-label">High/Med Risk Clauses</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon purple">📋</div>
+              <div>
+                <div class="stat-value" id="dash-missing-expected">0</div>
+                <div class="stat-label">Missing Expected Clauses</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon navy">⚡</div>
+              <div>
+                <div class="stat-value" id="dash-interactions-count">0</div>
+                <div class="stat-label">Triggered Interaction Traps</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Charts -->
+          <div class="charts-row">
+            <div class="card chart-card">
+              <div class="card-header">
+                <h3 class="card-title">Risk Level Distribution</h3>
+                <span class="card-subtitle">Clause proportions</span>
+              </div>
+              <div class="chart-canvas-container">
+                <canvas id="chart-risk-dist"></canvas>
+              </div>
+            </div>
+
+            <div class="card chart-card">
+              <div class="card-header">
+                <h3 class="card-title">Clause Severity Breakdown</h3>
+                <span class="card-subtitle">Top scored categories [0-10]</span>
+              </div>
+              <div class="chart-canvas-container">
+                <canvas id="chart-category-bar"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Per-Clause Detailed Table -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Clause-Wise Risk Findings</h3>
+                <p class="card-subtitle">Click on any clause row to inspect exact feature attribution</p>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" id="clause-search-input" class="form-control" placeholder="Search category..." style="padding: 6px 12px; width: 180px; font-size: 0.8rem;">
+                <select id="clause-filter-level" class="form-control" style="padding: 6px 12px; width: 130px; font-size: 0.8rem;">
+                  <option value="ALL">All Levels</option>
+                  <option value="High">High Risk</option>
+                  <option value="Medium">Medium Risk</option>
+                  <option value="Low">Low Risk</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="custom-table" id="clauses-table">
+                <thead>
+                  <tr>
+                    <th>Clause Category</th>
+                    <th>Risk Type</th>
+                    <th>Score</th>
+                    <th>Risk Level</th>
+                    <th>Evidence / Language</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="clauses-tbody">
+                  <tr>
+                    <td colspan="6" style="text-align: center; color: var(--slate-400); padding: 30px;">
+                      No analysis results yet. Submit a contract on the Analyze page to view findings.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- =================================================================
+             VIEW 4: EXPLAINABLE AI (XAI)
+             ================================================================= -->
+        <section id="view-xai" class="view-section">
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Explainable AI: Transparent Attribution Engine</h3>
+                <p class="card-subtitle">Every severity point is traced to explicit, rule-based mathematical contributions</p>
+              </div>
+              <span class="badge badge-teal">Layer 4: Explainability</span>
+            </div>
+            <p style="font-size: 0.86rem; color: var(--slate-600); line-height: 1.6;">
+              Unlike black-box neural networks where decisions are hidden within millions of weights, ClauseGuard AI provides 
+              <strong>exact feature attribution</strong>: <code>Score = (Base Severity + Keyword Modifiers) × Confidence</code>. 
+              Review the exact risk-modifying phrases detected in your contract text below.
+            </p>
+          </div>
+
+          <!-- XAI Cards Container -->
+          <div id="xai-cards-container">
+            <!-- Dynamically populated -->
+          </div>
+        </section>
+
+
+        <!-- =================================================================
+             VIEW 5: MISSING CLAUSE DETECTION
+             ================================================================= -->
+        <section id="view-missing" class="view-section">
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Contract-Specific Missing Clause Detection</h3>
+                <p class="card-subtitle">Identifying absent contractual protections across 10 specialized checklists</p>
+              </div>
+              <span class="badge badge-teal">Layer 5: Missing Protection Signals</span>
+            </div>
+            <p style="font-size: 0.86rem; color: var(--slate-600); line-height: 1.6;">
+              A contract missing a liability cap or termination clause is often riskier than one with a mediocre clause. 
+              Clauses are classified as <strong>Expected</strong> (vital protection), <strong>Conditional</strong> (deal-dependent), 
+              or <strong>Optional</strong>. An undetected clause does not guarantee breach; it highlights items requiring manual legal confirmation.
+            </p>
+          </div>
+
+          <div class="checklist-filters">
+            <span class="filter-pill active" data-check-filter="ALL">All Items (<span id="count-check-all">0</span>)</span>
+            <span class="filter-pill" data-check-filter="EXPECTED">Expected Only (<span id="count-check-exp">0</span>)</span>
+            <span class="filter-pill" data-check-filter="UNDETECTED">Undetected Only (<span id="count-check-undet">0</span>)</span>
+            <span class="filter-pill" data-check-filter="CONDITIONAL">Conditional (<span id="count-check-cond">0</span>)</span>
+            <span class="filter-pill" data-check-filter="OPTIONAL">Optional (<span id="count-check-opt">0</span>)</span>
+          </div>
+
+          <div class="card">
+            <div class="table-responsive">
+              <table class="custom-table" id="checklist-table">
+                <thead>
+                  <tr>
+                    <th>Clause Name</th>
+                    <th>Relevance</th>
+                    <th>Status</th>
+                    <th>Detection Method</th>
+                    <th>Rationale & Reason</th>
+                    <th>Recommended Action</th>
+                  </tr>
+                </thead>
+                <tbody id="checklist-tbody">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- =================================================================
+             VIEW 6: CROSS-CLAUSE INTERACTIONS
+             ================================================================= -->
+        <section id="view-interactions" class="view-section">
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Cross-Clause Compounding Risk Interactions</h3>
+                <p class="card-subtitle">Detecting dangerous multi-clause combinations invisible to isolated scoring</p>
+              </div>
+              <span class="badge badge-teal">Layer 6: Interaction Engine</span>
+            </div>
+            <p style="font-size: 0.86rem; color: var(--slate-600); line-height: 1.6;">
+              Traditional legal NLP evaluates clauses in isolation. However, a contract with <em>Uncapped Liability</em> 
+              combined with <em>No Cap On Liability</em> and <em>No Insurance</em> creates an exponential financial exposure trap. 
+              ClauseGuard AI models these combinations and adds calibrated risk bonuses to the contract-level assessment.
+            </p>
+          </div>
+
+          <div id="interactions-container" class="interaction-grid">
+            <!-- Dynamically populated interaction cards -->
+          </div>
+        </section>
+
+
+        <!-- =================================================================
+             VIEW 7: EXECUTIVE REPORT
+             ================================================================= -->
+        <section id="view-report" class="view-section">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;" class="no-print">
+            <div>
+              <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--slate-900);">Contract Audit & Risk Memo</h3>
+              <p style="font-size: 0.82rem; color: var(--slate-500);">Comprehensive executive analysis ready for legal team briefing or PDF export</p>
+            </div>
+            <button class="btn btn-primary" id="btn-print-report">
+              🖨️ Print / Download PDF
+            </button>
+          </div>
+
+          <!-- Printable Report Container -->
+          <div class="card" id="printable-report" style="padding: 36px; background: #fff;">
+            <!-- Report Header -->
+            <div style="border-bottom: 2px solid var(--slate-900); padding-bottom: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--teal-accent); text-transform: uppercase; letter-spacing: 0.05em;">ClauseGuard AI Legal Intelligence Memo</div>
+                <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--slate-900); margin: 4px 0;" id="rep-contract-title">Contract Risk Analysis Report</h1>
+                <div style="font-size: 0.86rem; color: var(--slate-600);" id="rep-meta-line">Document Type: Unknown | Date: Oct 13, 2026</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 1.8rem; font-weight: 800;" id="rep-overall-score">0.0 / 10</div>
+                <div id="rep-overall-level" class="badge badge-med">Pending</div>
+              </div>
+            </div>
+
+            <!-- Executive Summary -->
+            <div style="margin-bottom: 28px;">
+              <h4 style="font-size: 1rem; font-weight: 700; color: var(--slate-900); margin-bottom: 8px;">1. Executive Summary</h4>
+              <p style="font-size: 0.86rem; color: var(--slate-700); line-height: 1.6;" id="rep-exec-summary">
+                Contract risk analysis pending. Submit a contract text to generate memo summary.
+              </p>
+            </div>
+
+            <!-- Compounding Traps -->
+            <div style="margin-bottom: 28px;">
+              <h4 style="font-size: 1rem; font-weight: 700; color: var(--slate-900); margin-bottom: 8px;">2. Compounding Cross-Clause Risks</h4>
+              <div id="rep-interactions-list" style="font-size: 0.86rem; color: var(--slate-700);">
+                None identified.
+              </div>
+            </div>
+
+            <!-- Missing Protections -->
+            <div style="margin-bottom: 28px;">
+              <h4 style="font-size: 1rem; font-weight: 700; color: var(--slate-900); margin-bottom: 8px;">3. Missing Essential Protections</h4>
+              <div id="rep-missing-list" style="font-size: 0.86rem; color: var(--slate-700);">
+                No missing essential clauses flagged.
+              </div>
+            </div>
+
+            <!-- Clause Risk Matrix -->
+            <div style="margin-bottom: 28px;">
+              <h4 style="font-size: 1rem; font-weight: 700; color: var(--slate-900); margin-bottom: 8px;">4. Extracted Clause Risk Matrix</h4>
+              <div class="table-responsive">
+                <table class="custom-table" style="font-size: 0.8rem;">
+                  <thead>
+                    <tr>
+                      <th>Clause Category</th>
+                      <th>Risk Classification</th>
+                      <th>Score</th>
+                      <th>Level</th>
+                      <th>Key Modifiers</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rep-clauses-tbody">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Advisory Disclaimer -->
+            <div style="border-top: 1px solid var(--slate-200); padding-top: 16px; font-size: 0.74rem; color: var(--slate-500); line-height: 1.5;">
+              <strong>Review Advisory:</strong> This automated audit was generated by ClauseGuard AI using a rule-based explainable NLP scoring pipeline. Scores and checklist findings highlight clauses for prioritized human legal review and do not constitute formal legal counsel.
+            </div>
+          </div>
+        </section>
+
+
+        <!-- =================================================================
+             VIEW 8: METHODOLOGY & ARCHITECTURE
+             ================================================================= -->
+        <section id="view-methodology" class="view-section">
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">System Architecture & Research Methodology</h3>
+                <p class="card-subtitle">Formal specification of the 6-layer explainable AI framework</p>
+              </div>
+              <span class="badge badge-teal">Avishkar Research Submission</span>
+            </div>
+            <p style="font-size: 0.88rem; color: var(--slate-700); line-height: 1.6;">
+              <strong>Project:</strong> Explainable AI-Based Clause Risk Analyser in Contract<br>
+              <strong>Motivation:</strong> Existing legal tech literature (e.g. Hendrycks et al., Dikmen et al., Anusha & Rani, Sandhya B S) 
+              primarily scores individual clauses in isolation, ignores missing protective clauses, lacks confidence calibration, and uses 
+              black-box models without exact mathematical justification. This architecture directly addresses each of these gaps.
+            </p>
+          </div>
+
+          <div class="card" style="margin-bottom: 24px;">
+            <h4 style="font-size: 1rem; font-weight: 700; color: var(--slate-900); margin-bottom: 16px;">The Six Architectural Layers</h4>
+
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div style="padding: 16px; background: var(--slate-50); border-radius: 10px; border-left: 4px solid var(--teal-accent);">
+                <div style="font-weight: 700; color: var(--slate-900); margin-bottom: 4px;">Layer 1 — Clause Extraction (CUAD / Heuristic)</div>
+                <div style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.5;">
+                  Extracts target spans and annotator answers using fine-tuned transformer QA models (RoBERTa/DeBERTa on CUAD) 
+                  or calibrated word-bounded regex pattern matching with verified context windows.
+                </div>
+              </div>
+
+              <div style="padding: 16px; background: var(--slate-50); border-radius: 10px; border-left: 4px solid var(--teal-accent);">
+                <div style="font-weight: 700; color: var(--slate-900); margin-bottom: 4px;">Layer 2 — Risk Classification Taxonomy</div>
+                <div style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.5;">
+                  Maps 41 CUAD categories and 40 extended commercial categories into business risk types (Financial, Restrictive Covenant, 
+                  Termination, Renewal, IP, Operational, Legal/Compliance). Reuses existing categories without duplication.
+                </div>
+              </div>
+
+              <div style="padding: 16px; background: var(--slate-50); border-radius: 10px; border-left: 4px solid var(--teal-accent);">
+                <div style="font-weight: 700; color: var(--slate-900); margin-bottom: 4px;">Layer 3 — Rule-Based Risk Scoring</div>
+                <div style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.5;">
+                  Calculates clause risk: <code>Score = (Base Severity + Σ Keyword Modifiers) × Confidence + 5 × (1 - Confidence)</code>. 
+                  Low-confidence extractions are pulled toward neutral (5/10) to prevent false alarms.
+                </div>
+              </div>
+
+              <div style="padding: 16px; background: var(--slate-50); border-radius: 10px; border-left: 4px solid var(--teal-accent);">
+                <div style="font-weight: 700; color: var(--slate-900); margin-bottom: 4px;">Layer 4 — Explainability & Exact Attribution</div>
+                <div style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.5;">
+                  Generates natural language justifications and inspectable feature-attribution breakdowns. Unlike SHAP/LIME 
+                  approximations, every decimal point in the score has an exact, auditable cause.
+                </div>
+              </div>
+
+              <div style="padding: 16px; background: var(--slate-50); border-radius: 10px; border-left: 4px solid var(--teal-accent);">
+                <div style="font-weight: 700; color: var(--slate-900); margin-bottom: 4px;">Layer 5 — Contract-Specific Missing Clause Detection</div>
+                <div style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.5;">
+                  Applies customized checklists for 10 contract types. Classifies clauses as Expected, Conditional, or Optional, 
+                  and reports status as Detected, Not detected — verify manually, or Uncertain.
+                </div>
+              </div>
+
+              <div style="padding: 16px; background: var(--slate-50); border-radius: 10px; border-left: 4px solid var(--teal-accent);">
+                <div style="font-weight: 700; color: var(--slate-900); margin-bottom: 4px;">Layer 6 — Cross-Clause Interactions & Aggregation</div>
+                <div style="font-size: 0.82rem; color: var(--slate-600); line-height: 1.5;">
+                  Detects compound risk traps (Uncapped Financial Exposure, Exclusive Lock-In Trap, Abrupt Walkaway Risk) 
+                  and computes a confidence-calibrated contract-level score [0 - 10].
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Clause Inspector Modal -->
+  <div id="clause-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <button class="modal-close-btn" id="modal-close-btn">&times;</button>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <h3 id="modal-clause-title" style="font-size: 1.25rem; font-weight: 700; color: var(--slate-900);">Clause Details</h3>
+        <span id="modal-clause-badge" class="badge badge-med">Medium</span>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <span style="font-size: 0.76rem; font-weight: 600; text-transform: uppercase; color: var(--slate-500);">Risk Classification</span>
+        <div id="modal-clause-risk-type" style="font-size: 0.92rem; font-weight: 600; color: var(--slate-800);">Financial Risk</div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <span style="font-size: 0.76rem; font-weight: 600; text-transform: uppercase; color: var(--slate-500);">Extracted Contract Text / Evidence</span>
+        <div id="modal-clause-text" class="xai-quote-box">No text span available.</div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <span style="font-size: 0.76rem; font-weight: 600; text-transform: uppercase; color: var(--slate-500);">Explainable AI Justification</span>
+        <div id="modal-clause-explanation" style="font-size: 0.86rem; color: var(--slate-700); line-height: 1.5;"></div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <span style="font-size: 0.76rem; font-weight: 600; text-transform: uppercase; color: var(--slate-500);">Exact Feature Attribution Breakdown</span>
+        <table class="attribution-table" id="modal-attribution-table">
+          <!-- Dynamically populated -->
+        </table>
+      </div>
+
+      <div style="text-align: right; margin-top: 20px;">
+        <button class="btn btn-secondary btn-sm" id="modal-dismiss-btn">Close Inspector</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client Application Script -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
